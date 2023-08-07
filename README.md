@@ -12,15 +12,21 @@ For this we are using only two comnponents
 - [AWS CLI](https://aws.amazon.com/cli/) (with [`credential_process`](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sourcing-external.html) option)
 - [1Password CLI](https://developer.1password.com/docs/cli/)
 
-Create bash file for example `.aws/credentials-provider.sh` and put inside this very simple code.
-
+- Sign in with 1Password CLI `op signin` (sign into workspace where your item is stored)
+- Create bash file for example `.aws/credentials-provider.sh` and put inside this very simple code.
 
 ```bash
 #!/bin/bash
 
+# Check if the argument with 1Password item is provided
+if [ -z "$1" ]; then
+  echo "Please provide the name of the 1Pass item."
+  exit 1
+fi
+
 # Take secret vriables from 1Password via CLI (password or touch id will be required)
-access_key=$(op item get "my-main-account-access-key" --field "access key id")
-secret_access_key=$(op item get "my-main-account-access-key" --field "secret access key")
+access_key=$(op item get "$1" --field "access key id")
+secret_access_key=$(op item get "$1" --field "secret access key")
 
 # JSON output needed by AWS CLI
 json_output="{\"Version\": 1, \"AccessKeyId\": \"$access_key\", \"SecretAccessKey\": \"$secret_access_key\"}"
@@ -33,7 +39,7 @@ And then update your `.aws/config` file like that
 
 ```yml
 [default]
-credential_process = "/Users/my-user/.aws/credentials-provider.sh"
+credential_process = "/Users/my-user/.aws/credentials-provider.sh" "my-1pass-item-name-with-access-key"
 
 # You can add any special params (for example MFA device)
 region = eu-west-1
